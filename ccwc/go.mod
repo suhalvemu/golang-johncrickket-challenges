@@ -1,4 +1,4 @@
-module github.com/suhalvemu/wc
+module github.com/suhalvemu/ccwc
 
 go 1.24.5
 

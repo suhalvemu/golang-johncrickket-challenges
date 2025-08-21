@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/suhalvemu/wc/cmd"
+	"github.com/suhalvemu/ccwc/cmd"
 )
 
 var version = "dev" //overridden by Makefile
