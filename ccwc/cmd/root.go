@@ -37,6 +37,7 @@ var rootCmd = &cobra.Command{
 	Long: `ccwc is a Go implementation of the Unix 'wc' command.
 It can count lines, words, characters, and bytes from a file or standard input.`,
 	Version: version,
+	Args:    cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// No file provided → read from stdin
 		if len(args) == 0 {
