@@ -1,6 +1,7 @@
 # ccwc
 
 Lightweight Go implementation of the Unix `wc` (word/line/byte/char counter).  
+More details on the problem - https://codingchallenges.fyi/challenges/challenge-wc
 This README explains how to build, test, run and produce versioned binaries reproducibly (using Make and Go build ldflags).
 
 ## Prerequisites
@@ -21,7 +22,7 @@ Build a local binary:
 # from repo root
 make build VERSION=0.0.0
 # or without make
-go build -ldflags "-X 'cmd.version=0.0.0'" -o build/ccwc ./wc/cmd
+go build -ldflags "-X 'cmd.version=0.0.0'" -o build/ccwc .
 ```
 
 Run:
@@ -49,7 +50,7 @@ VERSION=1.2.3
 COMMIT=$(git rev-parse --short HEAD)
 DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-go build -ldflags "-X 'cmd.version=${VERSION}' -X 'cmd.commit=${COMMIT}' -X 'cmd.date=${DATE}'" -o build/ccwc-${VERSION}-$(uname -s)-$(uname -m) ./wc/cmd
+go build -ldflags "-X 'cmd.version=${VERSION}' -X 'cmd.commit=${COMMIT}' -X 'cmd.date=${DATE}'" -o build/ccwc-${VERSION}-$(uname -s)-$(uname -m) .
 ```
 
 ## Makefile (recommended)
@@ -59,7 +60,6 @@ Use `make` to produce consistent artifacts. Minimal example Makefile targets you
 ```makefile
 # Example Makefile excerpts (add to your Makefile)
 BUILD_DIR := build
-DIST_DIR := dist
 APP := ccwc
 
 VERSION ?= dev
@@ -68,21 +68,21 @@ DATE := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
 GOFLAGS := -ldflags "-X 'cmd.version=$(VERSION)' -X 'cmd.commit=$(COMMIT)' -X 'cmd.date=$(DATE)'"
 
-.PHONY: build test clean dist
+.PHONY: build test clean package
 
 build:
-    mkdir -p $(BUILD_DIR)
-    GOOS=$(GOOS) GOARCH=$(GOARCH) go build $(GOFLAGS) -o $(BUILD_DIR)/$(APP)-$(VERSION)-$(shell uname -s)-$(shell uname -m) ./wc/cmd
+    @mkdir -p $(BUILD_DIR)
+    GOOS=$(GOOS) GOARCH=$(GOARCH) go build $(GOFLAGS) -o $(BUILD_DIR)/$(APP)-$(VERSION)-$(shell uname -s)-$(shell uname -m) .
 
 test:
     go test ./... -v
 
-dist: build
-    mkdir -p $(DIST_DIR)
-    tar -C $(BUILD_DIR) -czf $(DIST_DIR)/$(APP)-$(VERSION)-$(shell uname -s)-$(shell uname -m).tgz .
+# Optional packaging: creates a tarball inside build/ (no separate dist/ folder)
+package: build
+    @tar -C $(BUILD_DIR) -czf $(BUILD_DIR)/$(APP)-$(VERSION)-$(shell uname -s)-$(shell uname -m).tgz $(notdir $(shell ls $(BUILD_DIR) | grep -v '\.tgz' || true))
 
 clean:
-    rm -rf $(BUILD_DIR) $(DIST_DIR)
+    rm -rf $(BUILD_DIR)
 ```
 
 Invoke:
@@ -93,8 +93,8 @@ make build VERSION=1.2.3
 # run tests
 make test
 
-# create tarball
-make dist VERSION=1.2.3
+# create packaged artifact inside build/
+make package VERSION=1.2.3
 ```
 
 ## Reproducibility best practices
@@ -112,9 +112,4 @@ In CI:
 - Use the same Go version as local dev.
 - Run `go mod download` before `go build`.
 - Use the Makefile to standardize commands used by CI runners.
-- Publish built artifacts into a consistent `dist/` folder and attach them to releases.
-
-## Troubleshooting
-
-- If push fails with large objects, check for files >100MB and remove them from history or use Git LFS.
-- If builds differ across machines, ensure identical `GOOS`, `GOARCH`, and Go toolchain versions.
+- Store built artifacts in the `build/` folder and
